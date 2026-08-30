@@ -2,14 +2,20 @@
   "name": "guchi-bbs",
   "main": "worker.js",
   "compatibility_date": "2026-08-30",
+
   "assets": {
-    "directory": "."
+    "directory": ".",
+    "binding": "ASSETS",
+    "run_worker_first": [
+      "/api/*"
+    ]
   },
+
   "d1_databases": [
     {
       "binding": "DB",
       "database_name": "guchi-bbs-db",
-      "database_id": "aa854f4a-2809-4bb5-a2db-d8acf68d2807"
+      "database_id": "ここは今入っているUUIDのまま"
     }
   ]
 }
