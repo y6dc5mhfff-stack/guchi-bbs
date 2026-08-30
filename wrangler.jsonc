@@ -9,7 +9,7 @@
     {
       "binding": "DB",
       "database_name": "guchi-bbs-db",
-      "database_id": "ここは後で入れる"
+      "database_id": "見つけたUUID"
     }
   ]
 }
