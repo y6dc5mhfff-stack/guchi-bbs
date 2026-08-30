@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>愚痴吐き場｜誰にも言えないことを匿名で</title>
+
+<meta name="description"
+content="誰にも言えない愚痴を匿名で吐き出せる掲示板。学校、仕事、人間関係、恋愛など、何でも気軽に書き込めます。">
+
+<style>
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: #f5f5f7;
+  color: #222;
+  font-family:
+    -apple-system,
+    BlinkMacSystemFont,
+    "Helvetica Neue",
+    Arial,
+    sans-serif;
+}
+
+header {
+  background: #222;
+  color: white;
+  padding: 35px 18px;
+  text-align: center;
+}
+
+header h1 {
+  margin: 0;
+  font-size: 32px;
+}
+
+header p {
+  margin: 10px 0 0;
+  color: #ccc;
+}
+
+.container {
+  max-width: 700px;
+  margin: auto;
+  padding: 20px 15px 50px;
+}
+
+.post-box {
+  background: white;
+  border-radius: 16px;
+  padding: 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 3px 15px rgba(0,0,0,.07);
+}
+
+textarea {
+  width: 100%;
+  height: 120px;
+  resize: none;
+  border: 1px solid #ddd;
+  border-radius: 12px;
+  padding: 14px;
+  font-size: 16px;
+  outline: none;
+}
+
+textarea:focus {
+  border-color: #555;
+}
+
+.post-button {
+  width: 100%;
+  margin-top: 10px;
+  padding: 14px;
+  border: none;
+  border-radius: 12px;
+  background: #222;
+  color: white;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.post-button:active {
+  transform: scale(.98);
+}
+
+.notice {
+  font-size: 12px;
+  color: #777;
+  margin-top: 10px;
+  line-height: 1.6;
+}
+
+.search {
+  width: 100%;
+  padding: 13px;
+  border: 1px solid #ddd;
+  border-radius: 12px;
+  font-size: 15px;
+  margin-bottom: 15px;
+}
+
+.section-title {
+  font-size: 20px;
+  font-weight: bold;
+  margin: 20px 0 12px;
+}
+
+.post {
+  background: white;
+  border-radius: 15px;
+  padding: 18px;
+  margin-bottom: 12px;
+  box-shadow: 0 2px 10px rgba(0,0,0,.06);
+}
+
+.post-content {
+  font-size: 16px;
+  line-height: 1.7;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.post-info {
+  color: #999;
+  font-size: 12px;
+  margin-top: 12px;
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.action {
+  border: 1px solid #ddd;
+  background: #fafafa;
+  border-radius: 20px;
+  padding: 7px 12px;
+  cursor: pointer;
+}
+
+.empty {
+  text-align: center;
+  color: #888;
+  padding: 30px;
+}
+
+footer {
+  text-align: center;
+  color: #888;
+  font-size: 12px;
+  padding: 20px;
+}
+</style>
+</head>
+
+<body>
+
+<header>
+  <h1>🗯️ 愚痴吐き場</h1>
+  <p>誰にも言えないこと、ここに吐き出そう。</p>
+</header>
+
+<main class="container">
+
+  <section class="post-box">
+
+    <textarea
+      id="message"
+      maxlength="1000"
+      placeholder="今日あった嫌なこと、誰にも言えないことを書いてみよう……"
+    ></textarea>
+
+    <button class="post-button" onclick="addPost()">
+      投稿する
+    </button>
+
+    <div class="notice">
+      ※完全な匿名を保証するものではありません。<br>
+      本名・住所・電話番号などの個人情報は書かないでください。
+    </div>
+
+  </section>
+
+  <input
+    id="search"
+    class="search"
+    placeholder="🔍 投稿を検索..."
+    oninput="displayPosts()"
+  >
+
+  <div class="section-title">
+    💬 新着の愚痴
+  </div>
+
+  <div id="posts"></div>
+
+</main>
+
+<footer>
+  © 2026 愚痴吐き場
+</footer>
+
+<script>
+
+let posts = JSON.parse(
+  localStorage.getItem("guchiPosts") || "[]"
+);
+
+function addPost() {
+
+  const message =
+    document.getElementById("message").value.trim();
+
+  if (!message) {
+    alert("愚痴を書いてから投稿してね。");
+    return;
+  }
+
+  const post = {
+    id: Date.now(),
+    message: message,
+    likes: 0,
+    date: new Date().toLocaleString("ja-JP")
+  };
+
+  posts.unshift(post);
+
+  localStorage.setItem(
+    "guchiPosts",
+    JSON.stringify(posts)
+  );
+
+  document.getElementById("message").value = "";
+
+  displayPosts();
+}
+
+function likePost(id) {
+
+  const post = posts.find(
+    post => post.id === id
+  );
+
+  if (!post) return;
+
+  post.likes++;
+
+  localStorage.setItem(
+    "guchiPosts",
+    JSON.stringify(posts)
+  );
+
+  displayPosts();
+}
+
+function reportPost(id) {
+
+  alert(
+    "通報を受け付けました。\n\n" +
+    "※実際の公開サイトでは、ここから管理者に通知する仕組みを追加します。"
+  );
+}
+
+function displayPosts() {
+
+  const container =
+    document.getElementById("posts");
+
+  const keyword =
+    document.getElementById("search")
+      .value
+      .toLowerCase();
+
+  const filtered =
+    posts.filter(post =>
+      post.message
+        .toLowerCase()
+        .includes(keyword)
+    );
+
+  container.innerHTML = "";
+
+  if (filtered.length === 0) {
+
+    container.innerHTML =
+      `<div class="empty">
+        まだ投稿がありません。<br>
+        最初の愚痴を書いてみよう。
+      </div>`;
+
+    return;
+  }
+
+  filtered.forEach(post => {
+
+    const element =
+      document.createElement("article");
+
+    element.className = "post";
+
+    element.innerHTML = `
+
+      <div class="post-content">
+        ${escapeHTML(post.message)}
+      </div>
+
+      <div class="post-info">
+        匿名ユーザー ・ ${post.date}
+      </div>
+
+      <div class="actions">
+
+        <button
+          class="action"
+          onclick="likePost(${post.id})"
+        >
+          ❤️ 共感 ${post.likes}
+        </button>
+
+        <button
+          class="action"
+          onclick="reportPost(${post.id})"
+        >
+          🚨 通報
+        </button>
+
+      </div>
+
+    `;
+
+    container.appendChild(element);
+
+  });
+}
+
+function escapeHTML(text) {
+
+  const div =
+    document.createElement("div");
+
+  div.textContent = text;
+
+  return div.innerHTML;
+}
+
+displayPosts();
+
+</script>
+
+</body>
+</html>
