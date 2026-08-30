@@ -353,7 +353,206 @@ function escapeHTML(text) {
 
 displayPosts();
 
+
+
+<script>
+
+async function loadPosts() {
+  try {
+    const response = await fetch("/api/posts");
+
+    if (!response.ok) {
+      throw new Error("投稿の取得に失敗しました");
+    }
+
+    const data = await response.json();
+
+    displayPosts(data);
+
+  } catch (error) {
+
+    document.getElementById("posts").innerHTML =
+      `<div class="empty">
+        投稿を読み込めませんでした。
+      </div>`;
+
+    console.error(error);
+  }
+}
+
+
+async function addPost() {
+
+  const message =
+    document.getElementById("message").value.trim();
+
+  if (!message) {
+    alert("愚痴を書いてから投稿してね。");
+    return;
+  }
+
+  if (message.length > 1000) {
+    alert("1000文字以内で書いてね。");
+    return;
+  }
+
+  try {
+
+    const response = await fetch("/api/posts", {
+      method: "POST",
+
+      headers: {
+        "Content-Type": "application/json"
+      },
+
+      body: JSON.stringify({
+        message: message
+      })
+    });
+
+
+    if (!response.ok) {
+      throw new Error("投稿に失敗しました");
+    }
+
+
+    document.getElementById("message").value = "";
+
+    await loadPosts();
+
+  } catch (error) {
+
+    alert("投稿できませんでした。");
+
+    console.error(error);
+  }
+}
+
+
+function displayPosts(posts) {
+
+  const container =
+    document.getElementById("posts");
+
+  const keyword =
+    document.getElementById("search")
+      .value
+      .toLowerCase()
+      .trim();
+
+
+  const filtered =
+    posts.filter(post =>
+      post.message
+        .toLowerCase()
+        .includes(keyword)
+    );
+
+
+  container.innerHTML = "";
+
+
+  if (filtered.length === 0) {
+
+    container.innerHTML =
+      `<div class="empty">
+        まだ投稿がありません。<br>
+        最初の愚痴を書いてみよう。
+      </div>`;
+
+    return;
+  }
+
+
+  filtered.forEach(post => {
+
+    const element =
+      document.createElement("article");
+
+    element.className = "post";
+
+
+    const date =
+      new Date(post.created_at)
+        .toLocaleString("ja-JP");
+
+
+    element.innerHTML = `
+
+      <div class="post-content">
+        ${escapeHTML(post.message)}
+      </div>
+
+      <div class="post-info">
+        匿名ユーザー ・ ${date}
+      </div>
+
+      <div class="actions">
+
+        <button
+          class="action"
+          onclick="likePost(${post.id})"
+        >
+          ❤️ 共感 ${post.likes}
+        </button>
+
+        <button
+          class="action"
+          onclick="reportPost(${post.id})"
+        >
+          🚨 通報
+        </button>
+
+      </div>
+
+    `;
+
+
+    container.appendChild(element);
+
+  });
+}
+
+
+function escapeHTML(text) {
+
+  const div =
+    document.createElement("div");
+
+  div.textContent = text;
+
+  return div.innerHTML;
+}
+
+
+function likePost(id) {
+
+  alert(
+    "共感機能は次の段階で追加します！"
+  );
+}
+
+
+function reportPost(id) {
+
+  alert(
+    "通報を受け付けました。"
+  );
+}
+
+
+/* 検索 */
+document
+  .getElementById("search")
+  .addEventListener("input", loadPosts);
+
+
+/* 最初に読み込む */
+loadPosts();
+
+
+/* 3秒ごとに新しい投稿を確認 */
+setInterval(loadPosts, 3000);
+
 </script>
 
-</body>
-</html>
