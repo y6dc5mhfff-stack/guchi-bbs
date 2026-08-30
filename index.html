@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>愚痴吐き場｜誰にも言えないことを匿名で</title>
+<title>愚痴吐き場｜匿名で愚痴を書き込める掲示板</title>
 
 <meta name="description"
 content="誰にも言えない愚痴を匿名で吐き出せる掲示板。学校、仕事、人間関係、恋愛など、何でも気軽に書き込めます。">
@@ -152,6 +152,13 @@ textarea:focus {
   padding: 30px;
 }
 
+.status {
+  text-align: center;
+  font-size: 12px;
+  color: #888;
+  margin: 10px 0;
+}
+
 footer {
   text-align: center;
   color: #888;
@@ -178,7 +185,10 @@ footer {
       placeholder="今日あった嫌なこと、誰にも言えないことを書いてみよう……"
     ></textarea>
 
-    <button class="post-button" onclick="addPost()">
+    <button
+      id="postButton"
+      class="post-button"
+      type="button">
       投稿する
     </button>
 
@@ -192,9 +202,11 @@ footer {
   <input
     id="search"
     class="search"
+    type="search"
     placeholder="🔍 投稿を検索..."
-    oninput="displayPosts()"
   >
+
+  <div id="status" class="status"></div>
 
   <div class="section-title">
     💬 新着の愚痴
@@ -210,352 +222,326 @@ footer {
 
 <script>
 
-let posts = JSON.parse(
-  localStorage.getItem("guchiPosts") || "[]"
-);
+const messageInput =
+  document.getElementById("message");
 
-function addPost() {
+const postButton =
+  document.getElementById("postButton");
 
-  const message =
-    document.getElementById("message").value.trim();
+const searchInput =
+  document.getElementById("search");
 
-  if (!message) {
-    alert("愚痴を書いてから投稿してね。");
-    return;
+const postsContainer =
+  document.getElementById("posts");
+
+const statusText =
+  document.getElementById("status");
+
+
+let allPosts = [];
+
+
+/* 投稿を取得 */
+
+async function loadPosts() {
+
+  try {
+
+    const response =
+      await fetch("/api/posts", {
+        cache: "no-store"
+      });
+
+    if (!response.ok) {
+      throw new Error(
+        "HTTP " + response.status
+      );
+    }
+
+    allPosts =
+      await response.json();
+
+    displayPosts();
+
+    statusText.textContent =
+      "自動更新中";
+
+  } catch (error) {
+
+    console.error(error);
+
+    statusText.textContent =
+      "投稿を読み込めませんでした";
+
   }
 
-  const post = {
-    id: Date.now(),
-    message: message,
-    likes: 0,
-    date: new Date().toLocaleString("ja-JP")
-  };
-
-  posts.unshift(post);
-
-  localStorage.setItem(
-    "guchiPosts",
-    JSON.stringify(posts)
-  );
-
-  document.getElementById("message").value = "";
-
-  displayPosts();
 }
 
-function likePost(id) {
 
-  const post = posts.find(
-    post => post.id === id
-  );
-
-  if (!post) return;
-
-  post.likes++;
-
-  localStorage.setItem(
-    "guchiPosts",
-    JSON.stringify(posts)
-  );
-
-  displayPosts();
-}
-
-function reportPost(id) {
-
-  alert(
-    "通報を受け付けました。\n\n" +
-    "※実際の公開サイトでは、ここから管理者に通知する仕組みを追加します。"
-  );
-}
+/* 投稿を表示 */
 
 function displayPosts() {
 
-  const container =
-    document.getElementById("posts");
-
   const keyword =
-    document.getElementById("search")
-      .value
+    searchInput.value
+      .trim()
       .toLowerCase();
 
+
   const filtered =
-    posts.filter(post =>
-      post.message
+    allPosts.filter(post =>
+
+      String(post.message)
         .toLowerCase()
         .includes(keyword)
+
     );
 
-  container.innerHTML = "";
+
+  postsContainer.innerHTML = "";
+
 
   if (filtered.length === 0) {
 
-    container.innerHTML =
-      `<div class="empty">
+    postsContainer.innerHTML = `
+      <div class="empty">
         まだ投稿がありません。<br>
         最初の愚痴を書いてみよう。
-      </div>`;
-
-    return;
-  }
-
-  filtered.forEach(post => {
-
-    const element =
-      document.createElement("article");
-
-    element.className = "post";
-
-    element.innerHTML = `
-
-      <div class="post-content">
-        ${escapeHTML(post.message)}
       </div>
-
-      <div class="post-info">
-        匿名ユーザー ・ ${post.date}
-      </div>
-
-      <div class="actions">
-
-        <button
-          class="action"
-          onclick="likePost(${post.id})"
-        >
-          ❤️ 共感 ${post.likes}
-        </button>
-
-        <button
-          class="action"
-          onclick="reportPost(${post.id})"
-        >
-          🚨 通報
-        </button>
-
-      </div>
-
     `;
 
-    container.appendChild(element);
-
-  });
-}
-
-function escapeHTML(text) {
-
-  const div =
-    document.createElement("div");
-
-  div.textContent = text;
-
-  return div.innerHTML;
-}
-
-displayPosts();
-
-
-
-<script>
-
-async function loadPosts() {
-  try {
-    const response = await fetch("/api/posts");
-
-    if (!response.ok) {
-      throw new Error("投稿の取得に失敗しました");
-    }
-
-    const data = await response.json();
-
-    displayPosts(data);
-
-  } catch (error) {
-
-    document.getElementById("posts").innerHTML =
-      `<div class="empty">
-        投稿を読み込めませんでした。
-      </div>`;
-
-    console.error(error);
-  }
-}
-
-
-async function addPost() {
-
-  const message =
-    document.getElementById("message").value.trim();
-
-  if (!message) {
-    alert("愚痴を書いてから投稿してね。");
     return;
-  }
 
-  if (message.length > 1000) {
-    alert("1000文字以内で書いてね。");
-    return;
-  }
-
-  try {
-
-    const response = await fetch("/api/posts", {
-      method: "POST",
-
-      headers: {
-        "Content-Type": "application/json"
-      },
-
-      body: JSON.stringify({
-        message: message
-      })
-    });
-
-
-    if (!response.ok) {
-      throw new Error("投稿に失敗しました");
-    }
-
-
-    document.getElementById("message").value = "";
-
-    await loadPosts();
-
-  } catch (error) {
-
-    alert("投稿できませんでした。");
-
-    console.error(error);
-  }
-}
-
-
-function displayPosts(posts) {
-
-  const container =
-    document.getElementById("posts");
-
-  const keyword =
-    document.getElementById("search")
-      .value
-      .toLowerCase()
-      .trim();
-
-
-  const filtered =
-    posts.filter(post =>
-      post.message
-        .toLowerCase()
-        .includes(keyword)
-    );
-
-
-  container.innerHTML = "";
-
-
-  if (filtered.length === 0) {
-
-    container.innerHTML =
-      `<div class="empty">
-        まだ投稿がありません。<br>
-        最初の愚痴を書いてみよう。
-      </div>`;
-
-    return;
   }
 
 
   filtered.forEach(post => {
 
-    const element =
+    const article =
       document.createElement("article");
 
-    element.className = "post";
+    article.className = "post";
 
+
+    const content =
+      document.createElement("div");
+
+    content.className =
+      "post-content";
+
+    content.textContent =
+      post.message;
+
+
+    const info =
+      document.createElement("div");
+
+    info.className =
+      "post-info";
 
     const date =
       new Date(post.created_at)
         .toLocaleString("ja-JP");
 
-
-    element.innerHTML = `
-
-      <div class="post-content">
-        ${escapeHTML(post.message)}
-      </div>
-
-      <div class="post-info">
-        匿名ユーザー ・ ${date}
-      </div>
-
-      <div class="actions">
-
-        <button
-          class="action"
-          onclick="likePost(${post.id})"
-        >
-          ❤️ 共感 ${post.likes}
-        </button>
-
-        <button
-          class="action"
-          onclick="reportPost(${post.id})"
-        >
-          🚨 通報
-        </button>
-
-      </div>
-
-    `;
+    info.textContent =
+      "匿名ユーザー ・ " + date;
 
 
-    container.appendChild(element);
+    const actions =
+      document.createElement("div");
+
+    actions.className =
+      "actions";
+
+
+    const likeButton =
+      document.createElement("button");
+
+    likeButton.className =
+      "action";
+
+    likeButton.type =
+      "button";
+
+    likeButton.textContent =
+      "❤️ 共感 " +
+      (post.likes || 0);
+
+
+    const reportButton =
+      document.createElement("button");
+
+    reportButton.className =
+      "action";
+
+    reportButton.type =
+      "button";
+
+    reportButton.textContent =
+      "🚨 通報";
+
+    reportButton.onclick =
+      function() {
+
+        alert(
+          "通報を受け付けました。"
+        );
+
+      };
+
+
+    actions.appendChild(
+      likeButton
+    );
+
+    actions.appendChild(
+      reportButton
+    );
+
+
+    article.appendChild(
+      content
+    );
+
+    article.appendChild(
+      info
+    );
+
+    article.appendChild(
+      actions
+    );
+
+
+    postsContainer.appendChild(
+      article
+    );
 
   });
+
 }
 
 
-function escapeHTML(text) {
+/* 投稿する */
 
-  const div =
-    document.createElement("div");
+async function addPost() {
 
-  div.textContent = text;
+  const message =
+    messageInput.value.trim();
 
-  return div.innerHTML;
+
+  if (!message) {
+
+    alert(
+      "愚痴を書いてから投稿してね。"
+    );
+
+    return;
+
+  }
+
+
+  if (message.length > 1000) {
+
+    alert(
+      "1000文字以内で書いてね。"
+    );
+
+    return;
+
+  }
+
+
+  postButton.disabled =
+    true;
+
+  postButton.textContent =
+    "投稿中…";
+
+
+  try {
+
+    const response =
+      await fetch(
+        "/api/posts",
+        {
+          method: "POST",
+
+          headers: {
+            "Content-Type":
+              "application/json"
+          },
+
+          body: JSON.stringify({
+            message: message
+          })
+        }
+      );
+
+
+    if (!response.ok) {
+
+      throw new Error(
+        "HTTP " + response.status
+      );
+
+    }
+
+
+    messageInput.value = "";
+
+    await loadPosts();
+
+
+  } catch (error) {
+
+    console.error(error);
+
+    alert(
+      "投稿できませんでした。"
+    );
+
+  } finally {
+
+    postButton.disabled =
+      false;
+
+    postButton.textContent =
+      "投稿する";
+
+  }
+
 }
 
 
-function likePost(id) {
+/* ボタン */
 
-  alert(
-    "共感機能は次の段階で追加します！"
-  );
-}
-
-
-function reportPost(id) {
-
-  alert(
-    "通報を受け付けました。"
-  );
-}
+postButton.addEventListener(
+  "click",
+  addPost
+);
 
 
 /* 検索 */
-document
-  .getElementById("search")
-  .addEventListener("input", loadPosts);
+
+searchInput.addEventListener(
+  "input",
+  displayPosts
+);
 
 
 /* 最初に読み込む */
+
 loadPosts();
 
 
-/* 3秒ごとに新しい投稿を確認 */
-setInterval(loadPosts, 3000);
+/* 3秒ごとに更新 */
+
+setInterval(
+  loadPosts,
+  3000
+);
 
 </script>
 
 </body>
-
 </html>
